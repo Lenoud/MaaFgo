@@ -124,6 +124,12 @@ CLASS_TABS = {
 _PACKAGED_OCR_DIR = os.path.join(_ROOT_DIR, "resource", "model", "ocr")
 OCR_EN_DIR = (_PACKAGED_OCR_DIR if os.path.isdir(_PACKAGED_OCR_DIR)
               else os.path.join(_ROOT_DIR, "assets", "resource", "base", "model", "ocr"))
+if os.environ.get("MAAFGO_RESOURCE_DIR"):
+    external = os.environ["MAAFGO_RESOURCE_DIR"]
+    OCR_EN_DIR = next((path for path in (
+        os.path.join(external, "model", "ocr"),
+        os.path.join(external, "base", "model", "ocr"),
+    ) if os.path.isdir(path)), OCR_EN_DIR)
 OCR_REC_ONNX = os.path.join(OCR_EN_DIR, "rec.onnx")
 OCR_REC_KEYS = os.path.join(OCR_EN_DIR, "keys.txt")
 
@@ -131,6 +137,9 @@ OCR_REC_KEYS = os.path.join(OCR_EN_DIR, "keys.txt")
 def _image_dir(package, *parts):
     """Return an image directory from either a packaged or development layout."""
     relative = os.path.join(package, "image", *parts)
+    external = os.environ.get("MAAFGO_RESOURCE_DIR")
+    if external and os.path.isdir(os.path.join(external, relative)):
+        return os.path.join(external, relative)
     packaged = os.path.join(_ROOT_DIR, "resource", relative)
     if os.path.isdir(packaged):
         return packaged

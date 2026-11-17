@@ -54,13 +54,13 @@ class ComposedCard:
 
 
 def default_asset_roots() -> tuple[Path, ...]:
+    from .data.resource_paths import resource_roots
     project = Path(__file__).resolve().parents[2]
     paths = []
-    for root in (project, project.parent):
-        for relative in ('assets/resource/base/image/CommandCards', 'resource/base/image/CommandCards'):
-            candidate = root / relative
-            if candidate.is_dir() and candidate not in paths:
-                paths.append(candidate)
+    for root in resource_roots(project):
+        candidate = root / 'base/image/CommandCards'
+        if candidate.is_dir() and candidate not in paths:
+            paths.append(candidate)
     return tuple(paths)
 
 

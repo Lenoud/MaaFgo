@@ -20,6 +20,7 @@ import cv2
 import numpy as np
 
 from ..card_composer import CommandCardComposer
+from ..data.resource_paths import resource_roots
 from ..core.enums import CardColor
 from ..core.models import Confidence
 from ..data.servant_identity import servant_template_ids
@@ -129,8 +130,8 @@ class ComposedCardRecognizer:
             raise ValueError('cache limits must be non-negative')
         self.cache_size, self.cache_bytes = int(cache_size), int(cache_bytes)
         if roots is None:
-            roots = [p for p in (self.root / 'assets/resource/base/image/CommandCards',
-                                  self.root / 'resource/base/image/CommandCards') if p.is_dir()]
+            roots = [root / 'base/image/CommandCards' for root in resource_roots(self.root)
+                     if (root / 'base/image/CommandCards').is_dir()]
         self.composer = CommandCardComposer(roots, cache_size=256, cache_bytes=64 * 1024 * 1024)
         self._cache = OrderedDict()
         self._cache_used = 0

@@ -631,6 +631,12 @@ class AutoFormationFromChaldea(CustomAction):
     def _init_paths(self):
         layer = resolve_resource_package(self.context, caller="编队")
         roots = []
+        external = os.environ.get("MAAFGO_RESOURCE_DIR")
+        if external:
+            for current_layer in (layer, "base"):
+                image_root = os.path.join(external, current_layer, "image")
+                if os.path.isdir(image_root) and image_root not in roots:
+                    roots.append(image_root)
         for root in (_PROJECT_DIR, os.path.dirname(_PROJECT_DIR)):
             for current_layer in (layer, "base"):
                 image_root = os.path.join(root, "assets", "resource", current_layer, "image")

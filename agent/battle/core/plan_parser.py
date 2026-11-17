@@ -130,14 +130,18 @@ def _parse_plan(param: dict | None) -> BattlePlan | None:
 
 def _load_action_param(raw_param: object) -> dict:
     """将 Maa 传入的 custom_action_param 规范化为对象。"""
-    if isinstance(raw_param, dict):
-        return raw_param
-    if not isinstance(raw_param, str) or not raw_param.strip():
-        return {}
-    try:
-        parsed = json.loads(raw_param)
-    except (json.JSONDecodeError, TypeError):
-        return {}
+    # 当前 Android Framework 会再次序列化字符串形式的覆盖参数。
+    # 只解包有限层 JSON；不把合法标量、列表或无效文本当作参数对象。
+    parsed = raw_param
+    for _ in range(3):
+        if isinstance(parsed, dict):
+            return parsed
+        if not isinstance(parsed, str) or not parsed.strip():
+            return {}
+        try:
+            parsed = json.loads(parsed)
+        except (json.JSONDecodeError, TypeError):
+            return {}
     return parsed if isinstance(parsed, dict) else {}
 
 def _parse_strategy_profile(param: dict) -> StrategyProfile:

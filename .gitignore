@@ -1,6 +1,10 @@
 # WorkBuddy 工作区数据（memory/skills，不纳入版本控制）
 .workbuddy/
 
+# Mac ADB 的本机运行资源、虚拟环境与私有诊断
+.runtime/
+.venv-mac/
+
 # 更新日志
 UPDATE_*.md
 

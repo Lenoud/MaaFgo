@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 from maa.agent.agent_server import AgentServer
 from maa.custom_recognition import CustomRecognition
+from battle.data.resource_paths import resource_roots
 
 
 @lru_cache(maxsize=4)
@@ -14,7 +15,7 @@ def load_templates(server: str):
     if server not in ("cn", "jp"):
         raise ValueError("主线模板仅支持 cn / jp")
     root = Path(__file__).resolve().parents[2]
-    for resources in (root / "resource", root / "assets" / "resource"):
+    for resources in resource_roots(root):
         folder = resources / server / "image" / "main_story"
         if (folder / "next.png").is_file():
             image = cv2.imdecode(np.fromfile(folder / "next.png", np.uint8), cv2.IMREAD_COLOR)

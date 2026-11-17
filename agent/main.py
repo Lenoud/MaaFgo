@@ -19,7 +19,7 @@ mfaalog.debug(f"[Agent Init] Root: {AGENT_ROOT}")
 mfaalog.debug(f"[Agent Init] Custom loaded: {os.path.exists(CUSTOM_PATH)}")
 # MaaFwApp 的 Python 运行时不安装 Windows BBC / psutil 依赖。
 IS_ANDROID = sys.platform == "android" or os.environ.get("MAAFGO_PLATFORM") == "android"
-if not IS_ANDROID:
+if sys.platform == "win32" and not IS_ANDROID:
     import bbc_action
     import bbc_start
     import bbc_stop

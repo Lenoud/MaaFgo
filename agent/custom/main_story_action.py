@@ -72,6 +72,7 @@ class StoryRunner:
         if not 1 <= self.limit <= 999 or self.mode not in ("native", "bbc") or not 10 <= self.timeout <= 600:
             raise ValueError("主线参数无效")
         self.completed = self.battles = 0
+        self._reco_cache = {}
         self.skip_confirm_until = self.skip_settle_until = 0
         self.auto_handle_restrictions = self.config.get("auto_handle_restrictions", True) is True
         self.use_spirit_stone = self.config.get("use_spirit_stone", False) is True
@@ -188,17 +189,23 @@ class StoryRunner:
 
     def frame(self):
         self.check_stop()
+        self._reco_cache = {}
         image = self.controller.post_screencap().wait().get()
         if image is None:
             raise StoryStopped("截图失败")
         return image
 
     def reco(self, name, image):
+        cached = self._reco_cache.get(name)
+        if cached is not None and cached[0] is image:
+            return cached[1]
         data = self.ctx.get_node_data(name)
         if data and not data.get("enabled", True):
             return None
         result = self.ctx.run_recognition(name, image)
-        return result if result and result.hit else None
+        result = result if result and result.hit else None
+        self._reco_cache[name] = (image, result)
+        return result
 
     def action(self, name, result=None, override=None):
         self.check_stop()
@@ -394,6 +401,9 @@ class StoryRunner:
             # 弹窗处理后复用原生进本的开始按钮识别。
             if self.reco("进本-队伍确认", image):
                 return None
+            # 客户端重启后可能停在助战页，应交给现有助战交接逻辑恢复。
+            if self.reco("主线-助战界面", image):
+                return None
             if self.panel(image):
                 result = self.find_in_panel(image)
                 if result:
@@ -582,6 +592,8 @@ class StoryRunner:
             raise StoryStopped("无法确定当前助战方式，请检查进本流程配置")
         support_name = support_nodes[0]
         deadline = self.clock() + self.timeout
+        started = self.clock()
+        mfaalog.info(f"[主线交接] 开始助战转编队 timeout={self.timeout}s")
         support_clicks = 0
         formation_since = None
         while self.clock() < deadline:
@@ -595,7 +607,9 @@ class StoryRunner:
             if self.reco("进本-队伍确认", image):
                 if formation_since is None:
                     formation_since = self.clock()
+                    mfaalog.info(f"[主线交接] 首次确认编队 elapsed={formation_since - started:.1f}s")
                 if self.clock() - formation_since >= 1:
+                    mfaalog.info(f"[主线交接] 编队复核通过 elapsed={self.clock() - started:.1f}s")
                     return
                 self.pause()
                 continue
@@ -616,6 +630,7 @@ class StoryRunner:
                 self.pause(1.5)
                 continue
             self.pause()
+        mfaalog.error(f"[主线交接] 超时 elapsed={self.clock() - started:.1f}s formation_seen={formation_since is not None}")
         raise StoryStopped("助战后未确认进入编队或战斗画面")
 
     def fight(self):
@@ -679,6 +694,10 @@ class StoryRunner:
             while True:
                 # 仅本关原生入口允许预设执行失败后改用默认战斗，不污染其他任务。
                 battle_node = {"attach": {"native_battle_preset_fallback": True}}
+                if not use_default and self.config.get("princess_double_koyan") is True:
+                    battle_node["action"] = {"param": {
+                        "custom_action_param": '{"princess_double_koyan":true}'
+                    }}
                 if use_default:
                     battle_node["action"] = {"param": {
                         "custom_action_param": '{"native_battle_formation_reset":true}'

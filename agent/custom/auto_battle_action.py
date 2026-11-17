@@ -27,6 +27,7 @@ from maa.tasker import TaskerEventSink
 
 import mfaalog
 from battle.core.decider import RuleDecider
+from battle.core.princess_double_koyan import apply_profile as apply_princess_profile
 from battle.core.advanced_strategy import (ADVANCED_STRATEGY_FIELD,
                                           advanced_strategy_to_param,
                                           validate_advanced_strategy)
@@ -145,6 +146,18 @@ class AutoBattleAction(CustomAction):
             if support_fallback or formation_reset:
                 param = _without_formation_strategy(param)
             param = _canonical_native_strategy_param(param)
+            if param.get("princess_double_koyan") is True and plan is None:
+                frontline = tuple(
+                    slot.servant_id if slot.status == "identified" else None
+                    for slot in initial_formation.slots[:3]
+                ) if initial_formation is not None else ()
+                princess_param = apply_princess_profile(param, frontline)
+                if princess_param is not None:
+                    param = princess_param
+                    plan = _parse_plan(param)
+                    mfaalog.info(f"[双杀公主] 按实际编队启用三回合方案 frontline={frontline}；公主1/3技能保留至第三回合")
+                else:
+                    mfaalog.warning(f"[双杀公主] 编队不符，未套用三回合方案 frontline={frontline}；使用通用战斗")
             profile = _parse_strategy_profile(param)
             battle_policy = _parse_battle_policy(param)
             if (battle_policy.card.native_strategy.opening_hand.enabled

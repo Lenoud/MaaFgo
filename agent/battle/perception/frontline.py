@@ -29,11 +29,10 @@ class FrontlineIdentity:
 
 @lru_cache(maxsize=1)
 def _status_roots() -> tuple[str, ...]:
+    from ..data.resource_paths import resource_roots
     project = Path(__file__).resolve().parents[3]
-    return tuple(str(path.resolve()) for root in (project, project.parent)
-                 for path in (root / "assets/resource/base/image/ServantStatus",
-                              root / "resource/base/image/ServantStatus")
-                 if path.is_dir())
+    return tuple(str(path.resolve()) for root in resource_roots(project)
+                 if (path := root / "base/image/ServantStatus").is_dir())
 
 
 @lru_cache(maxsize=64)

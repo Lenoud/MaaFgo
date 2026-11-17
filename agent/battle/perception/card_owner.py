@@ -71,13 +71,11 @@ def default_command_card_roots() -> tuple[Path, ...]:
     """Return source-tree and packaged command-card resource directories."""
     project = Path(__file__).resolve().parents[3]
     roots: list[Path] = []
-    for root in (project, project.parent):
-        for candidate in (
-            root / "assets" / "resource" / "base" / "image" / "CommandCards",
-            root / "resource" / "base" / "image" / "CommandCards",
-        ):
-            if candidate.is_dir() and candidate not in roots:
-                roots.append(candidate)
+    from ..data.resource_paths import resource_roots
+    for root in resource_roots(project):
+        candidate = root / "base/image/CommandCards"
+        if candidate.is_dir() and candidate not in roots:
+            roots.append(candidate)
     return tuple(roots)
 
 

@@ -13,6 +13,8 @@
 
 </div>
 
+> 本分支增加 **Mac 执行识别和主线调度、ADB 控制安卓游戏** 的命令行运行方式，以及双杀狐＋公主三回合方案。安装、资源获取、运行命令和当前适用范围见 [Mac ADB 主线运行说明](docs/Mac-ADB主线运行.md)。主线完整循环仍以实机验收记录为准。
+
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white">
   <img alt="platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20Android-blueviolet">
