@@ -136,6 +136,10 @@ def run(args):
             })
         if args.overrides:
             overrides = deep_merge(overrides, json.loads(args.overrides.read_text(encoding="utf-8")))
+        if args.resume_roster:
+            overrides = deep_merge(overrides, {"主线-配置": {"attach": {
+                "resume_roster": args.resume_roster,
+            }}})
         (runtime / "effective-overrides.json").write_text(
             json.dumps(overrides, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"开始 MaaFgo 流程：{args.entry}；上限 {args.quest_limit} 关", flush=True)
@@ -180,11 +184,17 @@ def main():
     parser.add_argument("--first-battle-profile", choices=("ido-britomart",),
                         help="首场战斗使用指定关卡攻略，目前仅奏章Ⅱ第六节进行度3")
     parser.add_argument("--overrides", type=Path, help="额外 pipeline JSON 覆盖文件")
+    parser.add_argument("--resume-roster", type=lambda value: [item.strip() or None for item in value.split(",")],
+                        help="恢复战斗的六个从者ID候选，以逗号分隔，未知留空；仍需实时识别核对")
     parser.add_argument("--runtime-dir", type=Path, default=ROOT / ".runtime" / "mac-adb",
                         help="私有运行日志和有效配置目录，不提交 Git")
     args = parser.parse_args()
     if not 1 <= args.quest_limit <= 999:
         parser.error("--quest-limit 必须为 1～999")
+    if args.resume_roster and (len(args.resume_roster) != 6 or any(
+            sid is not None and (not sid.isascii() or not sid.isdigit() or int(sid) <= 0)
+            for sid in args.resume_roster)):
+        parser.error("--resume-roster 必须为六个正整数ID或空位")
     try:
         return run(args)
     except (ValueError, RuntimeError) as exc:

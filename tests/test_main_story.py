@@ -80,6 +80,13 @@ def runner(frames=(), config=None):
 
 
 class RoutingTests(unittest.TestCase):
+    def test_explicit_resume_roster_can_resume_active_battle_without_clicking_map(self):
+        r, c = runner([{"进本-战斗主界面已出现"}], {
+            "resume_roster": ["604200", "2300500", "1100300", None, None, None],
+        })
+        self.assertIsNone(r.locate())
+        self.assertEqual(c.actions, [])
+
     def test_panel_has_priority_even_with_visible_map_target(self):
         r, c = runner([PANEL | MAP | {NEXT, "主线-地图NEXT"}])
         self.assertIsNotNone(r.locate())

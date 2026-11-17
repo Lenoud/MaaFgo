@@ -404,6 +404,8 @@ class StoryRunner:
             # 客户端重启后可能停在助战页，应交给现有助战交接逻辑恢复。
             if self.reco("主线-助战界面", image):
                 return None
+            if self.config.get("resume_roster") and self.reco("进本-战斗主界面已出现", image):
+                return None
             if self.panel(image):
                 result = self.find_in_panel(image)
                 if result:
@@ -707,6 +709,18 @@ class StoryRunner:
                     battle_node["action"] = {"param": {
                         "custom_action_param": '{"native_battle_formation_reset":true}'
                     }}
+                candidates = self.config.get("resume_roster")
+                if not use_default and self.battles == 0 and isinstance(candidates, list) and len(candidates) == 6:
+                    params = battle_node.setdefault("action", {}).setdefault("param", {})
+                    raw = params.get("custom_action_param", {})
+                    if isinstance(raw, str):
+                        import json
+                        raw = json.loads(raw)
+                    raw["chaldea_share"] = {"team": {
+                        "onFieldSvts": [{"svtId": sid} if sid else None for sid in candidates[:3]],
+                        "backupSvts": [{"svtId": sid} if sid else None for sid in candidates[3:]],
+                    }}
+                    params["custom_action_param"] = raw
                 battle_override = {"原生自动战斗入口": battle_node}
                 self.task("原生自动战斗入口", battle_override)
                 if not self.use_spirit_stone and not self.retry_without_spirit_stone:

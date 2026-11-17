@@ -43,6 +43,8 @@ Python 代码和模型、图片资源分别加载。可使用 v2.0.27 编译发�
 
 `Ctrl+C` 会先停止 MaaFramework 任务，再断开并结束 Python Agent，保留游戏现场。多设备时使用 `--device` 指定 ADB 地址。
 
+任务中断后若游戏仍在战斗页，可通过 `--resume-roster` 传入六个从者ID候选（逗号分隔，未知位置留空），恢复本场并继续结算和下一关。候选应来自此前真实编队记录；它们只用于缩小当前画面识别范围，不代替实时身份识别，也不生成虚假的初始编队采样。仅对本次运行第一场生效，后续关卡重新采集编队。
+
 默认不补充苹果、不使用灵脉石。`.runtime/mac-adb/effective-overrides.json` 保存实际参数，`last-result.json` 保存框架任务结果。Agent 详细识别日志保存在被忽略的 `debug/recognition-*.log`；运行输出保存在 `.runtime/mac-adb/agent-output.log`。
 
 只有完成战斗、结算并正确返回地图后，主线调度才累加关数。纯剧情关也计入推进上限，因此验证战斗循环时还应核对日志里的完成战斗场数。
