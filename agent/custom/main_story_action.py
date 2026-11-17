@@ -698,6 +698,11 @@ class StoryRunner:
                     battle_node["action"] = {"param": {
                         "custom_action_param": '{"princess_double_koyan":true}'
                     }}
+                if (not use_default and self.battles == 0
+                        and self.config.get("first_battle_profile") == "ido-britomart"):
+                    battle_node["action"] = {"param": {
+                        "custom_action_param": {"story_encounter": "ido-britomart"}
+                    }}
                 if use_default:
                     battle_node["action"] = {"param": {
                         "custom_action_param": '{"native_battle_formation_reset":true}'
@@ -775,6 +780,10 @@ class StoryRunner:
                     continue
                 self.settle()
                 self.battles += 1
+                normal_next = self.config.get("normal_support_next")
+                if self.battles == 1 and isinstance(normal_next, list) and normal_next:
+                    if not self.ctx.override_pipeline({"进本流程": {"next": normal_next}}):
+                        raise StoryStopped("专用关通关后无法恢复普通助战配置")
             self.completed += 1
             self._defeat_retries = 0
             self._dialogue_choices.clear()

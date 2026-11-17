@@ -24,6 +24,13 @@ def deep_merge(base, override):
     return result
 
 
+def support_next(name):
+    return ["[JumpBack]进本-关闭告知弹窗", name,
+            "[JumpBack]进本-自动编队确认", "[JumpBack]进本-编成条件提示",
+            "[JumpBack]进本-攻略提示关闭", "进本-队伍确认",
+            "进本-战斗主界面已出现", "[JumpBack]进本-盲点跳过剧情"]
+
+
 def story_overrides(limit, princess=False):
     result = {
         "主线-配置": {"attach": {
@@ -39,12 +46,7 @@ def story_overrides(limit, princess=False):
     }
     if princess:
         result = deep_merge(result, {
-            "进本流程": {"next": [
-                "[JumpBack]进本-关闭告知弹窗", "助战action",
-                "[JumpBack]进本-自动编队确认", "[JumpBack]进本-编成条件提示",
-                "[JumpBack]进本-攻略提示关闭", "进本-队伍确认",
-                "进本-战斗主界面已出现", "[JumpBack]进本-盲点跳过剧情",
-            ]},
+            "进本流程": {"next": support_next("助战action")},
             "助战action": {"attach": {
                 "servant": "604200", "class_name": "暗杀者", "class_all": "def",
                 "level": 90, "skill_active_1": "10", "skill_active_2": "10",
@@ -115,6 +117,23 @@ def run(args):
         if not client.connect():
             raise RuntimeError(f"Python Agent 连接失败，请检查 {runtime / 'agent-output.log'}")
         overrides = story_overrides(args.quest_limit, args.princess_double_koyan)
+        overrides = deep_merge(overrides, {
+            "主线-配置": {"attach": {"server": args.server}},
+            "资源包配置": {"attach": {"resource_package": "cn" if args.server == "cn" else "base"}},
+        })
+        if args.first_battle_profile:
+            normal_next = overrides.get("进本流程", {}).get("next", support_next("进本-选择助战"))
+            avenger = story_overrides(args.quest_limit, True)
+            avenger["助战action"]["attach"].update({
+                "servant": "1100300", "class_name": "复仇者", "level": 100,
+                "np_level": 3, "普通助战-礼装-满破": "黑之圣杯.png",
+                "search_all_support_slots": True, "max_swipes_before_refresh": 48,
+            })
+            overrides = deep_merge(overrides, {
+                "主线-配置": {"attach": {"first_battle_profile": args.first_battle_profile,
+                                         "normal_support_next": normal_next}},
+                "进本流程": avenger["进本流程"], "助战action": avenger["助战action"],
+            })
         if args.overrides:
             overrides = deep_merge(overrides, json.loads(args.overrides.read_text(encoding="utf-8")))
         (runtime / "effective-overrides.json").write_text(
@@ -158,6 +177,8 @@ def main():
     parser.add_argument("--princess-double-koyan", action="store_true",
                         help="普通关查找满技能光狐，实际双杀公主前排才启用三回合方案")
     parser.add_argument("--entry", default="自动推主线调度", help="MaaFgo pipeline 入口")
+    parser.add_argument("--first-battle-profile", choices=("ido-britomart",),
+                        help="首场战斗使用指定关卡攻略，目前仅奏章Ⅱ第六节进行度3")
     parser.add_argument("--overrides", type=Path, help="额外 pipeline JSON 覆盖文件")
     parser.add_argument("--runtime-dir", type=Path, default=ROOT / ".runtime" / "mac-adb",
                         help="私有运行日志和有效配置目录，不提交 Git")

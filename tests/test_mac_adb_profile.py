@@ -15,7 +15,8 @@ from battle.core.princess_double_koyan import apply_profile, PRINCESS, KOYAN
 from battle.core.plan_parser import _load_action_param, _parse_plan, _parse_battle_policy
 from battle.core.decider import RuleDecider
 from battle.core.enums import Scene, CardColor, PrimitiveKind
-from battle.core.models import BattleState, Confidence, CommandCard, NpCard
+from battle.core.models import BattleState, Confidence, CommandCard, NpCard, ServantState, SkillState
+from battle.strategies.ido_britomart import IdoBritomartDecider, JALTER
 from battle.data.resource_paths import resource_roots
 
 spec = importlib.util.spec_from_file_location("mac_adb_runner", ROOT / "tools/mac_adb_runner.py")
@@ -88,6 +89,39 @@ class MacAdbProfileTests(unittest.TestCase):
         self.assertEqual(attach["servant"], KOYAN)
         self.assertFalse(attach["fallback_after_refresh"])
         self.assertEqual(nodes["全局-战前吃体力"]["next"], ["全局-体力不足"])
+
+    def test_britomart_reserves_fox_charge_and_targets_avenger_after_confirmation(self):
+        decider = IdoBritomartDecider(_parse_battle_policy({}))
+        ready = (SkillState(True, Confidence(1)),) * 3
+        servants = tuple(ServantState(slot, ready, Confidence(1), servant_id=sid)
+                         for slot, sid in enumerate((KOYAN, PRINCESS, JALTER), 1))
+        state = BattleState(Scene.MAIN_BATTLE, Confidence(1), (), (), (), servants=servants)
+        trash = decider.decide(state)
+        self.assertFalse(any(skill.servant_slot == 1 for skill in trash.servant_skills))
+        decider.boss_seen = True
+        boss = decider.decide(state)
+        fox_skills = [skill for skill in boss.servant_skills if skill.servant_slot == 1]
+        self.assertEqual([skill.target_ally for skill in fox_skills], [3, 3, 3])
+        self.assertTrue(any(skill.servant_slot == 3 and skill.skill_index == 3
+                            for skill in boss.servant_skills))
+
+    def test_britomart_never_guesses_a_missing_avenger_target(self):
+        decider = IdoBritomartDecider(_parse_battle_policy({}))
+        decider.boss_seen = True
+        ready = (SkillState(True, Confidence(1)),) * 3
+        state = BattleState(Scene.MAIN_BATTLE, Confidence(1), (), (), (),
+                            servants=(ServantState(1, ready, Confidence(1), servant_id=KOYAN),))
+        self.assertFalse(decider.decide(state).servant_skills)
+
+    def test_britomart_preserves_avenger_np_when_no_princess_cards_are_dealt(self):
+        decider = IdoBritomartDecider(_parse_battle_policy({}))
+        cards = tuple(CommandCard(i, CardColor.BUSTER, 3, Confidence(1),
+                                  owner_confidence=Confidence(1), owner_servant_id=JALTER)
+                      for i in range(1, 6))
+        state = BattleState(Scene.COMMAND_SELECTION, Confidence(1), cards,
+                            (NpCard(3, Confidence(1), owner_servant_id=JALTER),), ())
+        self.assertTrue(all(pick.kind is PrimitiveKind.SELECT_CARD
+                            for pick in decider.decide(state).picks))
 
 
 if __name__ == "__main__":

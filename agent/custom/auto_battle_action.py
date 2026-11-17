@@ -175,6 +175,15 @@ class AutoBattleAction(CustomAction):
         roster_servant_ids = _merge_rosters(initial_formation, chaldea_roster)
         decider = RuleDecider(battle_policy, plan=plan)
         runtime_class = AutoBattleRuntime
+        if param.get("story_encounter") == "ido-britomart":
+            from battle.strategies.ido_britomart import IdoBritomartDecider
+            from battle.runtime.ido_britomart import IdoBritomartRuntime
+            if "1100300" not in roster_servant_ids[:3]:
+                mfaalog.error("[奏章二专用] 当前前排没有已确认的黑贞，拒绝使用该攻略")
+                return CustomAction.RunResult(success=False)
+            decider = IdoBritomartDecider(battle_policy)
+            runtime_class = IdoBritomartRuntime
+            mfaalog.info("[奏章二专用] 第六节进行度3：杂兵公主输出，识别到Boss后切换黑贞输出")
         if trial_config is not None:
             decider = HellishTrialDecider(decider, trial_config)
             runtime_class = HellishTrialRuntime
