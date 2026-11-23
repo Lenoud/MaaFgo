@@ -1,0 +1,57 @@
+{
+  "原生自动战斗入口": {
+    "action": {
+      "param": {
+        "custom_action_param": {
+          "princess_double_koyan": true
+        }
+      }
+    }
+  },
+  "助战action": {
+    "attach": {
+      "level": 0,
+      "np_level": 0,
+      "search_all_support_slots": true,
+      "max_swipes_before_refresh": 48
+    }
+  },
+  "幕间-配置": {
+    "attach": {
+      "quest_limit": 3,
+      "transition_timeout": 190
+    }
+  },
+  "幕间-列表界面": {
+    "recognition": {
+      "type": "And",
+      "param": {
+        "all_of": [
+          {
+            "sub_name": "base/自动幕间副本/幕间-列表界面/OCR1",
+            "recognition": {
+              "type": "OCR",
+              "param": {
+                "roi": [1000, 0, 280, 90],
+                "expected": ["^强化任务$"],
+                "threshold": 0.8,
+                "color_filter": "剧情奖励-前景白字过滤"
+              }
+            }
+          },
+          {
+            "sub_name": "base/自动幕间副本/幕间-列表界面/OCR2",
+            "recognition": {
+              "type": "OCR",
+              "param": {
+                "roi": [0, 0, 175, 90],
+                "expected": ["^关闭$"],
+                "threshold": 0.8
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
